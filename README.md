@@ -124,7 +124,7 @@ src/
 
 ## 🚀 Installation
 
-Requires **PHP 8.4+** and **Laravel 10+ / 11 / 12**.
+Requires **PHP 8.4+** and **Laravel 10+ / 11 / 12 / 13**.
 
 ### 1. Install via Composer
 
