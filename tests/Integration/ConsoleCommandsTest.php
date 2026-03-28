@@ -105,6 +105,41 @@ class ConsoleCommandsTest extends TestCase
         ->assertExitCode(1);
     }
 
+    public function test_doctor_command_passes_with_local_ocr_setup()
+    {
+        config()->set('laravel-ocr.default', 'tesseract');
+        config()->set('laravel-ocr.drivers.tesseract.binary', '/bin/sh');
+        config()->set('laravel-ocr.ai_cleanup.default_provider', 'ollama');
+        config()->set('laravel-ocr.providers.ollama.url', 'http://localhost:11434');
+
+        $this->artisan('laravel-ocr:doctor')
+            ->expectsOutput('Laravel OCR doctor passed.')
+            ->assertExitCode(0);
+    }
+
+    public function test_doctor_command_warns_when_ai_dependency_is_missing()
+    {
+        config()->set('laravel-ocr.default', 'google_vision');
+
+        $this->app->bind(\Mayaram\LaravelOcr\Console\Commands\DoctorCommand::class, function ($app) {
+            return new class extends \Mayaram\LaravelOcr\Console\Commands\DoctorCommand
+            {
+                protected function checkAiSupport(): array
+                {
+                    return [
+                        'component' => 'AI Cleanup',
+                        'status' => 'WARN',
+                        'message' => 'Optional dependency missing. Install laravel/ai to enable AI cleanup.',
+                    ];
+                }
+            };
+        });
+
+        $this->artisan('laravel-ocr:doctor')
+            ->expectsOutput('Laravel OCR doctor completed with warnings.')
+            ->assertExitCode(0);
+    }
+
     protected function mockOCRManager()
     {
         $mock = \Mockery::mock(\Mayaram\LaravelOcr\Services\OCRManager::class);

@@ -34,20 +34,20 @@
     }
   ],
   "require": {
-    "php": "^8.4",
+    "php": "^8.2",
     "illuminate/support": "^9.0|^10.0|^11.0|^12.0|^13.0",
     "thiagoalessio/tesseract_ocr": "^2.12",
     "smalot/pdfparser": "^2.0",
     "intervention/image": "^3.0",
     "guzzlehttp/guzzle": "^7.0",
     "aws/aws-sdk-php": "^3.369",
-    "laravel/ai": "^0.3.0"
+    "ext-json": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^12.4",
-    "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
-    "pestphp/pest": "^4.1",
-    "pestphp/pest-plugin-laravel": "^4.1"
+    "phpunit/phpunit": "^10.5|^11.5|^12.0",
+    "orchestra/testbench": "^7.0|^8.0|^9.0|^10.0|^11.0",
+    "pestphp/pest": "^2.0|^3.0|^4.0",
+    "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0"
   },
   "autoload": {
     "psr-4": {
@@ -60,7 +60,7 @@
     }
   },
   "suggest": {
-    "laravel/ai": "Required for AI-powered cleanup and structured extraction",
+    "laravel/ai": "Optional. Install to enable AI-powered cleanup and structured extraction. Current laravel/ai releases require newer PHP/Laravel versions than the core OCR package.",
     "google/cloud-vision": "Required to use the Google Vision driver.",
     "aws/aws-sdk-php": "Required to use the AWS Textract driver.",
     "guzzlehttp/guzzle": "Required to use the Azure OCR driver."

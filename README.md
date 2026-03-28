@@ -21,6 +21,8 @@ A powerful, developer-friendly Laravel package that reads text from images and P
 - [✨ Features](#-features)
 - [📐 Architecture](#-architecture)
 - [🚀 Installation](#-installation)
+  - [Compatibility Matrix](#compatibility-matrix)
+  - [Quick Start](#quick-start)
   - [Install via Composer](#1-install-via-composer)
   - [Publish Configuration & Assets](#2-publish-configuration--assets)
   - [Publish Views (Optional)](#3-publish-views-optional)
@@ -33,6 +35,7 @@ A powerful, developer-friendly Laravel package that reads text from images and P
   - [Azure Computer Vision](#azure-computer-vision)
   - [AI Cleanup (via Laravel AI SDK)](#ai-cleanup-via-laravel-ai-sdk)
   - [Queue Configuration](#queue-configuration)
+  - [Troubleshooting Setup](#troubleshooting-setup)
   - [Storage & Security](#storage--security)
 - [📖 Usage](#-usage)
   - [Simple Text Extraction](#1-simple-text-extraction)
@@ -68,14 +71,14 @@ A powerful, developer-friendly Laravel package that reads text from images and P
 ## ✨ Features
 
 - **🧠 Multi-Driver OCR Engine**: Seamlessly switch between **Tesseract** (offline/privacy-first), **Google Cloud Vision**, **AWS Textract**, or **Azure Computer Vision** drivers.
-- **🤖 AI-Powered Cleanup**: Uses `laravel/ai` SDK with the `CleanupAgent` to fix OCR typos (e.g., `arnount` → `amount`, `nurnber` → `number`) and normalize data formats. Supports **OpenAI, Anthropic, Gemini, Ollama, DeepSeek, Groq, Mistral**, and more.
+- **🤖 Optional AI Cleanup**: Can use the `laravel/ai` SDK with the `CleanupAgent` to fix OCR typos (e.g., `arnount` → `amount`, `nurnber` → `number`) and normalize data formats. Supports **OpenAI, Anthropic, Gemini, Ollama, DeepSeek, Groq, Mistral**, and more when the AI stack is installed.
 - **📦 Typed DTOs**: Returns an `OcrResult` data transfer object with `text`, `confidence`, `bounds`, and `metadata` properties — not just raw arrays.
 - **📑 Advanced Invoice Extraction**: Specialized algorithms to extract line items (quantity, description, unit price, total), subtotals, tax, shipping, and totals from complex invoice layouts.
 - **🔍 Auto-Classification**: Automatically detects document types (Invoice, Receipt, Contract, Purchase Order, Shipping, General) using keyword scoring.
 - **📋 Reusable Templates**: Define document templates with regex patterns and positional extraction to target specific fields. Supports template creation, import/export, and auto-matching.
 - **⚡ Workflows**: Define custom processing pipelines per document type in your config (e.g., "If Invoice → Extract Tables → Verify Required Fields").
 - **🎨 Blade Component**: Built-in `<x-laravel-ocr::document-preview>` component to visualize results with bounding box overlays, inline editing, and data export.
-- **🖥️ Artisan Commands**: CLI tools for template creation (`laravel-ocr:create-template`) and document processing (`laravel-ocr:process`).
+- **🖥️ Artisan Commands**: CLI tools for environment diagnostics (`laravel-ocr:doctor`), template creation (`laravel-ocr:create-template`), and document processing (`laravel-ocr:process`).
 - **💾 Database Persistence**: Optionally save processed results to the `ocr_processed_documents` table with template associations, confidence scores, and processing times.
 - **🔒 Enterprise Security**: Encrypted storage options, MIME-type validation, malware scanning, and full offline support for sensitive data.
 
@@ -98,7 +101,7 @@ src/
 │   ├── AWSTextractDriver.php     # AWS Textract API
 │   └── AzureOCRDriver.php        # Azure Computer Vision API
 ├── DTOs/
-│   └── OcrResult.php             # Readonly DTO: text, confidence, bounds, metadata
+│   └── OcrResult.php             # DTO: text, confidence, bounds, metadata
 ├── Enums/
 │   ├── DocumentType.php          # Invoice, Receipt, Contract, PurchaseOrder, Shipping, General
 │   └── OcrDriver.php             # Tesseract, GoogleVision, AWSTextract, Azure
@@ -124,13 +127,49 @@ src/
 
 ## 🚀 Installation
 
-Requires **PHP 8.4+** and **Laravel 10+ / 11 / 12 / 13**.
+Requires **PHP 8.2+**.
+
+Core OCR features support Laravel **9 / 10 / 11 / 12 / 13**.
+AI cleanup is optional and depends on the `laravel/ai` package version you install.
+
+### Compatibility Matrix
+
+| Capability | PHP | Laravel | Extra Package |
+| ---------- | --- | ------- | ------------- |
+| Core OCR, templates, parsing, console commands | `8.2+` | `9+` | None |
+| AI cleanup with `provider=basic` | `8.2+` | `9+` | None |
+| AI cleanup with `laravel/ai` | Depends on the `laravel/ai` version you install | Depends on the `laravel/ai` version you install | `laravel/ai` |
+
+If you need the widest compatibility, keep AI cleanup on `provider=basic`.
+
+### Quick Start
+
+Install the package, publish the config and migrations, verify the runtime, then process a document:
+
+```bash
+composer require mayaram/laravel-ocr
+php artisan vendor:publish --tag=laravel-ocr-config
+php artisan vendor:publish --tag=laravel-ocr-migrations
+php artisan migrate
+php artisan laravel-ocr:doctor
+php artisan laravel-ocr:process storage/app/sample-invoice.pdf --type=invoice
+```
+
+For AI cleanup, install `laravel/ai` separately and configure your provider credentials before using `--ai-cleanup`.
 
 ### 1. Install via Composer
 
 ```bash
 composer require mayaram/laravel-ocr
 ```
+
+### Optional: Install AI Cleanup Support
+
+```bash
+composer require laravel/ai
+```
+
+`laravel/ai` has its own PHP/Laravel constraints. Check the version you install if you need AI cleanup on top of the core OCR package.
 
 ### 2. Publish Configuration & Assets
 
@@ -215,7 +254,7 @@ AZURE_OCR_VERSION=3.2
 
 ### AI Cleanup (via Laravel AI SDK)
 
-Enable AI-powered OCR post-processing to fix scanning errors and normalize data formats. The package uses `laravel/ai` with a dedicated `CleanupAgent` that supports multiple LLM providers.
+Enable AI-powered OCR post-processing to fix scanning errors and normalize data formats. This feature is optional and requires `laravel/ai` to be installed in the host app. The package uses a dedicated `CleanupAgent` that supports multiple LLM providers.
 
 ```env
 LARAVEL_OCR_AI_CLEANUP=true
@@ -256,6 +295,36 @@ LARAVEL_OCR_QUEUE_CONNECTION=default
 LARAVEL_OCR_QUEUE_NAME=ocr-processing
 ```
 
+## 🩺 Doctor Command
+
+Use the doctor command to verify the package runtime setup before processing documents:
+
+```bash
+php artisan laravel-ocr:doctor
+```
+
+It checks:
+- PHP version compatibility
+- The configured default OCR driver
+- Tesseract binary availability when Tesseract is the active driver
+- Optional AI cleanup readiness
+
+### Troubleshooting Setup
+
+Use these checks before debugging extraction quality:
+
+```bash
+php artisan laravel-ocr:doctor
+tesseract --version
+```
+
+Common setup issues:
+
+- `Tesseract binary not found`: set `TESSERACT_BINARY` to the real binary path on your machine.
+- AI cleanup warning: install `laravel/ai`, then configure `LARAVEL_OCR_AI_PROVIDER` and the matching API key.
+- PDF conversion issues: ensure the host has the extensions and system tools required by your PDF/image pipeline.
+- Laravel install conflicts: check the PHP/Laravel constraints of `laravel/ai` separately from the core package.
+
 ### Storage & Security
 
 ```env
@@ -290,6 +359,8 @@ foreach ($tableResult['table'] as $row) {
 }
 ```
 
+If you only need OCR text and not structured parsing, this is the simplest integration point.
+
 ### 2. Smart Parsing (Structured Data via `OcrResult` DTO)
 
 For powerful data extraction, use the `DocumentParser`. It returns a typed `OcrResult` DTO with `text`, `confidence`, `bounds`, and `metadata` properties.
@@ -318,6 +389,8 @@ $fields = $result->metadata['fields'];
 $invoiceNumber = $fields['invoice_number']['value'];
 $totalAmount = $fields['totals']['total']['amount'];
 ```
+
+Use `DocumentParser` when you want document classification, template support, field extraction, metadata, or optional cleanup in one pipeline.
 
 ### 3. Batch Processing
 
@@ -548,6 +621,14 @@ php artisan laravel-ocr:process /path/to/invoice.pdf \
 | `--ai-cleanup`    | Enable AI-powered cleanup                  |
 | `--save`          | Save results to database                   |
 | `--output=FORMAT` | Output format: `json` or `table` (default) |
+
+### Check Environment Health
+
+```bash
+php artisan laravel-ocr:doctor
+```
+
+Run this first on a new machine, server, or CI environment.
 
 ---
 
@@ -787,6 +868,13 @@ composer test
 ```
 
 Tests use SQLite in-memory database automatically via `phpunit.xml` configuration.
+
+Current coverage includes:
+
+- parsing and template application
+- console commands
+- AI cleanup flow with mocked AI responses
+- end-to-end package flow through integration tests
 
 ---
 

@@ -7,6 +7,7 @@ use Mayaram\LaravelOcr\Services\OCRManager;
 use Mayaram\LaravelOcr\Services\TemplateManager;
 use Mayaram\LaravelOcr\Services\AICleanupService;
 use Mayaram\LaravelOcr\Services\DocumentParser;
+use Mayaram\LaravelOcr\Console\Commands\DoctorCommand;
 use Mayaram\LaravelOcr\Console\Commands\CreateTemplateCommand;
 use Mayaram\LaravelOcr\Console\Commands\ProcessDocumentCommand;
 
@@ -57,6 +58,7 @@ class LaravelOcrServiceProvider extends ServiceProvider
             $this->commands([
                 CreateTemplateCommand::class,
                 ProcessDocumentCommand::class,
+                DoctorCommand::class,
             ]);
         }
 
